@@ -61,8 +61,8 @@ pretrained_fname = 'yolo.weights'
 
 # detection config
 ############################
-thresh = 0.3
-
+thresh = 0.6
+iou_thresh = 0.6
 
 # dir config
 ############################

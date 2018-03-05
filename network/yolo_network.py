@@ -9,8 +9,12 @@ Created on Wed Feb  7 12:56:31 2018
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
-from utils.reorg_layer import ReorgLayer
+# from utils.reorg_layer import ReorgLayer
+
+import sys
+sys.path.append('../')
+
+from layers.reorg.reorg_layer import ReorgLayer
 
 
 import utils.network as net_utils

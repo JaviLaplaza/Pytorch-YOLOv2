@@ -12,11 +12,11 @@ import torch
 import numpy as np
 
 from utils.nms_wrapper import nms
+import cfg.config as cfg
 
 
 
-
-torch.manual_seed(1)
+# torch.manual_seed(1)
 
 
 def yolo_filter_boxes(box_confidence, boxes, box_class_probs, threshold = 0.6):
@@ -285,7 +285,7 @@ def clip_boxes(boxes, im_shape):
 
 
 
-def postprocess(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.05,
+def postprocess(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.6, iou_thresh = 0.6,
                 size_index=9):
     """
     bbox_pred: (bsize, HxW, num_anchors, 4)
@@ -328,7 +328,7 @@ def postprocess(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.05,
             continue
         c_bboxes = bbox_pred[inds]
         c_scores = scores[inds]
-        c_keep = nms_detections(c_bboxes, c_scores, 0.3)
+        c_keep = nms_detections(c_bboxes, c_scores, iou_thresh)
         keep[inds[c_keep]] = 1
 
     keep = np.where(keep > 0)
@@ -373,7 +373,7 @@ def preprocess_test(data, size_index=0):
 
 
 
-def draw_detection(im, bboxes, scores, cls_inds, cfg, thr=0.3):
+def draw_detection(im, bboxes, scores, cls_inds, cfg, thr=0.6):
     # draw image
     colors = cfg.colors
     labels = cfg.label_names
