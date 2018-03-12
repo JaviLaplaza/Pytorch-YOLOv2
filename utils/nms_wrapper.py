@@ -21,11 +21,11 @@ from .nms.gpu_nms import gpu_nms
 #         return cpu_nms(dets, thresh)
 
 
-def nms(dets, thresh, force_cpu=False):
+def nms(dets, thresh, use_gpu=True):
     """Dispatch to either CPU or GPU NMS implementations."""
 
     if dets.shape[0] == 0:
         return []
-    if force_cpu:
-        return cpu_nms(dets, thresh)
-    return gpu_nms(dets, thresh)
+    if use_gpu:
+        return gpu_nms(dets, thresh)
+    return cpu_nms(dets, thresh)

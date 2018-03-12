@@ -61,8 +61,8 @@ class FC(nn.Module):
     
     
 
-def np_to_variable(x, is_cuda=True, dtype=torch.FloatTensor, volatile=False):
+def np_to_variable(x, use_cuda=True, dtype=torch.FloatTensor, volatile=False):
     v = Variable(torch.from_numpy(x).type(dtype), volatile=volatile)
-    if is_cuda:
+    if use_cuda:
         v = v.cuda()
     return v
