@@ -8,7 +8,6 @@ Created on Fri Feb 16 13:01:29 2018
 
 import torch
 from torch.autograd import Function
-#from ._ext import reorg_layer
 
 
 
@@ -23,42 +22,39 @@ class ReorgFunction(Function):
         out_w, out_h, out_c = int(w / stride), int(h / stride), c * (stride * stride)  # noqa
         out = torch.FloatTensor(bsize, out_c, out_h, out_w)
 
-        """
+        
         if x.is_cuda:
             out = out.cuda()
-            reorg_layer.reorg_cuda(x, out_w, out_h, out_c, bsize,
-                                   stride, 0, out)
+            out = x.view(bsize, out_c, out_h, out_w)
         else:
-            out = reorg_cpu(x, out_w, out_h, out_c, bsize, stride, 0, out)
-        """
-        out = x.view(bsize, out_c, out_h, out_w)
+            out = x.view(bsize, out_c, out_h, out_w)
+        
+        
         
         
 
         return out
 
-"""
+
     def backward(self, grad_top):
         stride = self.stride
         bsize, c, h, w = grad_top.size()
 
         out_w, out_h, out_c = w * stride, h * stride, c / (stride * stride)
-        grad_bottom = torch.FloatTensor(bsize, int(out_c), out_h, out_w)
+        grad_bottom = torch.FloatTensor(bsize, out_c, out_h, out_w)
 
 
         # rev_stride = 1. / stride    # reverse
         if grad_top.is_cuda:
             grad_bottom = grad_bottom.cuda()
-            reorg_layer.reorg_cuda(grad_top, w, h, c, bsize,
-                                   stride, 1, grad_bottom)
+            grad_bottom = grad_top.view(bsize, out_c, out_h, out_w)
         else:
 
-        grad_bottom = reorg_cpu(grad_top, w, h, c, bsize,
-                                  stride, 1, grad_bottom)
+            grad_bottom = grad_top.view(bsize, out_c, out_h, out_w)
             
 
         return grad_bottom
-"""
+
 
 class ReorgLayer(torch.nn.Module):
     def __init__(self, stride):

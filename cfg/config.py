@@ -8,8 +8,12 @@ Created on Fri Feb 16 10:34:29 2018
 
 import os
 import numpy as np
+import torch
 from .config_voc import * 
 
+
+# chose between cpu and gpu
+use_cuda = torch.cuda.is_available()
 
 # input and output size
 ############################
@@ -61,12 +65,13 @@ pretrained_fname = 'yolo.weights'
 
 # detection config
 ############################
-thresh = 0.6
-iou_thresh = 0.6
+thresh = 0.3
+iou_thresh = 0.3
 
 # dir config
 ############################
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
 
 WEIGHTS_DIR = os.path.join(ROOT_DIR, 'weights')
 IM_DIR = os.path.join(ROOT_DIR, 'images')

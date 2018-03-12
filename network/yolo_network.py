@@ -12,7 +12,6 @@ import torch.nn.functional as F
 # from utils.reorg_layer import ReorgLayer
 
 import sys
-sys.path.append('../')
 
 from layers.reorg.reorg_layer import ReorgLayer
 
