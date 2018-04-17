@@ -2,22 +2,93 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Dec 14 11:26:05 2017
-
 @author: jlaplaza
 """
 
 import cv2
 
-import torch
 import numpy as np
 
 from utils.nms_wrapper import nms
 import cfg.config as cfg
+from .im_transform import imcv2_affine_trans, imcv2_recolor
 
+global counter
+counter = 1
 
 
 # torch.manual_seed(1)
 
+###############################################################################################################
+##################### PREPROCESS
+###############################################################################################################
+
+    
+def preprocess_test(data, size_index=0):
+
+    im, _, inp_size = data
+    #inp_size = inp_size[size_index]
+    if isinstance(im, str):
+        im = cv2.imread(im)
+    ori_im = np.copy(im)
+
+    if inp_size is not None:
+        w, h = inp_size
+        im = cv2.resize(im, (w, h))
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im = im / 255.
+
+    return im, [], [], [], ori_im    
+
+
+def preprocess_train(data, size_index):
+    global counter
+    print(counter)
+    counter += 1
+    im_path, blob, inp_size = data
+    inp_size = inp_size[size_index]
+    boxes, gt_classes = blob['boxes'], blob['gt_classes']
+
+    im = cv2.imread(im_path)
+    ori_im = np.copy(im)
+
+    im, trans_param = imcv2_affine_trans(im)
+    scale, offs, flip = trans_param
+    boxes = _offset_boxes(boxes, im.shape, scale, offs, flip)
+
+    if inp_size is not None:
+        w, h = inp_size
+        boxes[:, 0::2] *= float(w) / im.shape[1]
+        boxes[:, 1::2] *= float(h) / im.shape[0]
+        im = cv2.resize(im, (w, h))
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im = imcv2_recolor(im)
+    # im /= 255.
+
+    # im = imcv2_recolor(im)
+    # h, w = inp_size
+    # im = cv2.resize(im, (w, h))
+    # im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    # im /= 255
+    boxes = np.asarray(boxes, dtype=np.int)
+    return im, boxes, gt_classes, [], ori_im
+
+
+def _offset_boxes(boxes, im_shape, scale, offs, flip):
+    if len(boxes) == 0:
+        return boxes
+    boxes = np.asarray(boxes, dtype=np.float)
+    boxes *= scale
+    boxes[:, 0::2] -= offs[0]
+    boxes[:, 1::2] -= offs[1]
+    boxes = clip_boxes(boxes, im_shape)
+
+    if flip:
+        boxes_x = np.copy(boxes[:, 0])
+        boxes[:, 0] = im_shape[1] - boxes[:, 2]
+        boxes[:, 2] = im_shape[1] - boxes_x
+
+    return boxes
 
 
 ###############################################################################################################
@@ -73,7 +144,7 @@ def clip_boxes(boxes, im_shape):
 
 
 def postprocess(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.6, iou_thresh = 0.6,
-                size_index=9):
+                size_index=cfg.size_index):
     """
     bbox_pred: (bsize, HxW, num_anchors, 4)
                ndarray of float (sig(tx), sig(ty), exp(tw), exp(th))
@@ -130,22 +201,7 @@ def postprocess(bbox_pred, iou_pred, prob_pred, im_shape, cfg, thresh=0.6, iou_t
     return bbox_pred, scores, cls_inds   
     
     
-    
-def preprocess_test(data, size_index=0):
 
-    im, _, inp_size = data
-    #inp_size = inp_size[size_index]
-    if isinstance(im, str):
-        im = cv2.imread(im)
-    ori_im = np.copy(im)
-
-    if inp_size is not None:
-        w, h = inp_size
-        im = cv2.resize(im, (w, h))
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    im = im / 255.
-
-    return im, [], [], [], ori_im    
     
     
 
@@ -181,35 +237,3 @@ def draw_detection(im, bboxes, scores, cls_inds, cfg, thr=0.6):
                     0, 1e-3 * h, colors[cls_indx], thick // 3)
 
     return imgcv
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-            

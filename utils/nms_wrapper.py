@@ -6,8 +6,8 @@ Created on Wed Feb 21 17:25:08 2018
 @author: jlaplaza
 """
 
-from .nms.cpu_nms import cpu_nms
-from .nms.gpu_nms import gpu_nms
+from utils.nms.cpu_nms import cpu_nms
+from utils.nms.gpu_nms import gpu_nms
 
 
 # def nms(dets, thresh, force_cpu=False):

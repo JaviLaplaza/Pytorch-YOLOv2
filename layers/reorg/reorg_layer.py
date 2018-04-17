@@ -19,7 +19,7 @@ class ReorgFunction(Function):
         stride = self.stride
 
         bsize, c, h, w = x.size()
-        out_w, out_h, out_c = int(w / stride), int(h / stride), c * (stride * stride)  # noqa
+        out_w, out_h, out_c = int(w / stride), int(h / stride), int(c * (stride * stride))  # noqa
         out = torch.FloatTensor(bsize, out_c, out_h, out_w)
 
         
@@ -40,17 +40,17 @@ class ReorgFunction(Function):
         stride = self.stride
         bsize, c, h, w = grad_top.size()
 
-        out_w, out_h, out_c = w * stride, h * stride, c / (stride * stride)
+        out_w, out_h, out_c = int(w * stride), int(h * stride), int(c / (stride * stride))
         grad_bottom = torch.FloatTensor(bsize, out_c, out_h, out_w)
 
 
         # rev_stride = 1. / stride    # reverse
         if grad_top.is_cuda:
             grad_bottom = grad_bottom.cuda()
-            grad_bottom = grad_top.view(bsize, out_c, out_h, out_w)
+            grad_bottom = grad_top.contiguous().view(bsize, out_c, out_h, out_w)
         else:
 
-            grad_bottom = grad_top.view(bsize, out_c, out_h, out_w)
+            grad_bottom = grad_top.contiguous().view(bsize, out_c, out_h, out_w)
             
 
         return grad_bottom
