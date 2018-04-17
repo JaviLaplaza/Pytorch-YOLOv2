@@ -5,11 +5,27 @@ Created on Fri Feb 16 10:34:29 2018
 
 @author: jlaplaza
 """
+import sys
+sys.path.append('../')
 
 import os
 import numpy as np
 import torch
-from .config_voc import * 
+from cfg.config_voc import * 
+from cfg.exps.darknet19_exp1 import * 
+
+
+
+
+def mkdir(path, max_depth=3):
+    parent, child = os.path.split(path)
+    if not os.path.exists(parent) and max_depth > 1:
+        mkdir(parent, max_depth-1)
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
 
 
 # chose between cpu and gpu
@@ -39,9 +55,13 @@ multi_scale_out_size = [multi_scale_inp_size[0] / 32,
                         multi_scale_inp_size[8] / 32,
                         multi_scale_inp_size[9] / 32,
                         ]   # w, h
-inp_size = np.array([608, 608], dtype=np.int)   # w, h
+
+size_index = 3 #select the index of the dimension you want to use
+
+inp_size = multi_scale_inp_size[size_index]   # w, h
 
 out_size = inp_size / 32
+
 
 
 # for display
@@ -60,7 +80,7 @@ colors = [_to_color(x, base) for x in range(num_classes)]
 
 
 #h5_fname = 'yolo-voc.weights.h5'
-pretrained_fname = 'yolo.weights'
+#pretrained_fname = 'yolo.weights'
 
 
 # detection config
@@ -74,8 +94,23 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
 WEIGHTS_DIR = os.path.join(ROOT_DIR, 'weights')
+
 IM_DIR = os.path.join(ROOT_DIR, 'images')
+
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+
+MODEL_DIR = os.path.join(ROOT_DIR, 'models')
+
+TRAIN_DIR = os.path.join(MODEL_DIR, 'training')
+
+train_output_dir = os.path.join(TRAIN_DIR, exp_name)
+
+mkdir(train_output_dir, max_depth=3)
+
+
 
 trained_model = os.path.join(WEIGHTS_DIR, h5_fname)
 pretrained_model = os.path.join(WEIGHTS_DIR, pretrained_fname)
 
+log_interval = 50
+disp_interval = 1

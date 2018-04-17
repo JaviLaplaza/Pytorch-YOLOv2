@@ -8,15 +8,10 @@ Created on Wed Feb 14 18:58:30 2018
 
 from __future__ import absolute_import
 
-
-
-
-
-
 import os
 import cv2
 import sys
-import matplotlib.pyplot as plt
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # adding ROOT_DIR to sys.path to handle the imports
 
@@ -30,23 +25,18 @@ import utils.network as net_utils
 import utils.yolo as yolo_utils
 from utils.timer import Timer
 
+
 # required paths
 
-im_path = cfg.IM_DIR # path to the directory containing the images
-
-
-
+#im_path = cfg.IM_DIR # path to the directory containing the images
 
 # YOLO input
 # x = Variable(torch.randn(1, 3, 608, 608))
 
-
-
-
-def preprocess(fname):
+def preprocess(frame):
     # return fname
-    image = cv2.imread(fname)
-    im_data = np.expand_dims(yolo_utils.preprocess_test((image, None, cfg.inp_size))[0], 0)
+    image = frame
+    im_data = np.expand_dims(yolo_utils.preprocess_test((frame, None, cfg.inp_size))[0], 0)
     return image, im_data
 
 
@@ -82,29 +72,29 @@ print("Setting Model to Evaluation Mode")
 # model.load_from_npz(cfg.pretrained_model, num_conv=18)
 
 
-
 t_det = Timer()
 t_total = Timer()
+t_cap = Timer()
+cap = cv2.VideoCapture("/dev/video1")
+i=0
 
-im_fnames = sorted((fname
-                    for fname in os.listdir(im_path)
-                    if os.path.splitext(fname)[-1] == '.jpg'))
-im_fnames = (os.path.join(im_path, fname) for fname in im_fnames)
-
-im_fnames = list(im_fnames)
-
-for i, image in enumerate(im_fnames):
-    t_total.tic()
+while(True):
+    t_cap.tic()
+    # Capture frame by frame
+    ret, frame = cap.read()
+    cap_time = t_cap.toc()
     
-    image, im_data = preprocess(image)
-    print("image: " + str(image))
-    print("im_data: " + str(im_data))
+    # Our operations on the frame come here
+    #gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    t_total.tic()
+
+    image, im_data = preprocess(frame)
     im_data = net_utils.np_to_variable(im_data, use_cuda=cfg.use_cuda, volatile=True).permute(0, 3, 1, 2)
 
 
     t_det.tic()
     bbox_pred, iou_pred, prob_pred = model(im_data)
-
     det_time = t_det.toc()
 
     # to numpy
@@ -114,7 +104,7 @@ for i, image in enumerate(im_fnames):
 
     prob_pred = prob_pred.data.cpu().numpy()
 
-    bboxes, scores, cls_inds = yolo_utils.postprocess(bbox_pred, iou_pred, prob_pred, image.shape, cfg, cfg.thresh, cfg.iou_thresh, size_index=cfg.size_index)
+    bboxes, scores, cls_inds = yolo_utils.postprocess(bbox_pred, iou_pred, prob_pred, image.shape, cfg, cfg.thresh, cfg.iou_thresh)
 
     im2show = yolo_utils.draw_detection(image, bboxes, scores, cls_inds, cfg, cfg.thresh)
     total_time = t_total.toc()
@@ -124,16 +114,30 @@ for i, image in enumerate(im_fnames):
                              (int(1000. *
                                   float(im2show.shape[1]) / im2show.shape[0]),
                               1000))
+    """
+    cv2.startWindowThread()
+    cv2.imshow('test', im2show)
+    """
     
-    im2show = im2show[...,::-1]
-
-    plt.imshow(im2show, aspect='auto')
-    plt.show()
+    # Display the resulting frame
+    cv2.imshow('frame',im2show)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
     total_time = t_total.toc()
 
+
+    # wait_time = max(int(60 - total_time * 1000), 1)
+    # cv2.waitKey(0)
+
     format_str = 'frame: %d, ' + '(detection: %.1f Hz, %.1f ms) ' + '(total: %.1f Hz, %.1f ms)'
     print((format_str % (i, 1./ det_time, det_time * 1000, 1./  total_time, total_time * 1000)))
-
+    i += 1
     t_total.clear()
-    t_det.clear()
+    t_det.clear()   
+
+# When everything done, release the capture
+cap.release()
+cv2.destroyAllWindows()
+
+

@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
+import cfg.config as cfg
+
 
 
 class Conv2d(nn.Module):
@@ -61,8 +63,14 @@ class FC(nn.Module):
     
     
 
-def np_to_variable(x, use_cuda=True, dtype=torch.FloatTensor, volatile=False):
+def np_to_variable(x, use_cuda=cfg.use_cuda, dtype=torch.FloatTensor, volatile=False):
     v = Variable(torch.from_numpy(x).type(dtype), volatile=volatile)
     if use_cuda:
         v = v.cuda()
     return v
+
+def save_net(fname, model):
+    import h5py
+    h5f = h5py.File(fname, mode='w')
+    for k, v in list(model.state_dict().items()):
+        h5f.create_dataset(k, data=v.cpu().numpy())
