@@ -59,7 +59,7 @@ model = YOLO() #creation of the network
 load_model(cfg.trained_model, model) #loading pretrained weights into the network
 
 if cfg.use_cuda:
-    model.cuda()
+    model = model.cuda()
 
 model.eval()
 print("Model loaded successfully.")
